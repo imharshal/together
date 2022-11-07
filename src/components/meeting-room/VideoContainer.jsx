@@ -1,29 +1,49 @@
 import { Box, Stack } from "@mui/material";
-import React from "react";
-import PersonVideo from "./PersonVideo";
+import React, { useEffect, useState } from "react";
+import VideoFrame from "./VideoFrame";
+import { VideoFrameContext } from "../../Context";
+const grid = {
+  display: "grid",
+  gap: 2,
+  gridTemplateColumns: "repeat(auto-fill, minmax(250px, auto))",
+  alignContent: "start ",
+  gridTemplateRows: "repeat(auto-fill, minmax(250px, 1fr))",
+  p: 2,
+  mb: 4,
+};
 
-function VideoContainer() {
+function VideoContainer({ videos }) {
+  const styles = {
+    position: "relative",
+    display: "flex",
+    flex: "1 1 300px",
+    flexFlow: "row wrap",
+    justifyContent: "center",
+    height: "100%",
+    width: "100%",
+    gap: 1,
+    p: 2,
+  };
+  const len = 8;
+  let size = 0;
+  const width = [100, 50, 40, 30, 25, 20, 15];
+  const breakpoint = [1, 2, 4, 6, 12, 20, 30];
+  if (len <= breakpoint[0]) size = 0;
+  else if (len <= breakpoint[1]) size = 1;
+  else if (len <= breakpoint[2]) size = 2;
+  else if (len <= breakpoint[3]) size = 3;
+  else if (len <= breakpoint[4]) size = 4;
+  else if (len <= breakpoint[5]) size = 5;
+  else if (len >= breakpoint[6]) size = 6;
+
   return (
-    <Box
-      sx={{
-        display: "grid",
-        gap: 2,
-        gridTemplateColumns: "repeat(auto-fill, minmax(250px, auto))",
-        height: "100%",
-        alignContent: "start",
-        p: 2,
-        mb: 4,
-      }}
-    >
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-      <PersonVideo />
-    </Box>
+    <VideoFrameContext.Provider value={width[size]}>
+      <Box sx={styles}>
+        {[...Array(len)].map((e, i) => (
+          <VideoFrame key={i} />
+        ))}
+      </Box>
+    </VideoFrameContext.Provider>
   );
 }
 

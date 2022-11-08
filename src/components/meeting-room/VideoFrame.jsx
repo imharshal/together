@@ -1,21 +1,37 @@
 import { Paper } from "@mui/material";
-import React, { useContext } from "react";
+import React, { useContext, useRef, useEffect } from "react";
 import { VideoFrameContext } from "../../Context";
-
-function VideoFrame() {
+function VideoFrame({ peer }) {
   const size = useContext(VideoFrameContext);
+  const ref = useRef();
+
+  useEffect(() => {
+    peer.on("stream", (stream) => {
+      ref.current.srcObject = stream;
+    });
+  }, []);
+
   return (
     <Paper
       sx={{
         width: "100%",
         flexShrink: 0,
         flexBasis: `calc(${size}% - 10px)`,
-        objectFit: "cover",
-        borderRadius: 2,
-        p: 2,
+        // objectFit: "cover",
+        borderRadius: 3,
+        overflow: "hidden",
       }}
     >
-      Video
+      <video
+        playsInline
+        autoPlay
+        ref={ref}
+        style={{
+          objectFit: "cover",
+          width: "100%",
+          height: "100%",
+        }}
+      ></video>
     </Paper>
   );
 }

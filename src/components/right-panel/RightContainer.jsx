@@ -12,7 +12,8 @@ const RightContainer = forwardRef((props, ref) => {
         position="relative"
         boxSizing="border-box"
         id="right-container"
-        flexGrow={10}
+        flexGrow={{ md: 10 }}
+        height={"93%"}
         ref={ref}
       >
         {tab && (

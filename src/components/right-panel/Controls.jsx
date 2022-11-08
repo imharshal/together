@@ -8,7 +8,7 @@ import { TabControlContext } from "../../Context";
 function Controls() {
   const { tab, handleChange } = useContext(TabControlContext);
   return (
-    <Box display="flex" justifyContent="end" marginRight={18}>
+    <Box display="flex" justifyContent="end" marginRight={{ md: 18, sm: 0 }}>
       <ControlButtonGroup
         role="group"
         color="primary"

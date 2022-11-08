@@ -6,7 +6,7 @@ import { Stack, ToggleButton } from "@mui/material";
 import { Mic, Videocam } from "@mui/icons-material";
 function MeetingActions() {
   return (
-    <Stack direction="row" justifyContent="center" flexGrow={100}>
+    <Stack direction="row" justifyContent="center">
       <ControlButtonGroup
         role="group"
         color="primary"

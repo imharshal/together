@@ -1,42 +1,74 @@
 import Button from "@mui/material/Button";
-import { Grid, TextField } from "@mui/material";
-import { Box } from "@mui/system";
-import { Keyboard, VideoCall } from "@mui/icons-material";
+import { Container, Grid, TextField, Box, Typography } from "@mui/material";
 
+import { Keyboard, VideoCall } from "@mui/icons-material";
+import { v1 as uuid } from "uuid";
+import { useNavigate } from "react-router-dom";
+import onlineMeetingImage from "../assets/online-meeting.png";
 function Homepage() {
+  let navigate = useNavigate();
+
+  function create() {
+    const id = uuid();
+    navigate(`/room/${id}`);
+  }
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={12} md="6">
-        <Box component="h1" sx={{ fontSize: "60px" }}>
-          Enjoy premium video conferencing experience for free{" "}
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "stretch", gap: "40px" }}>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{ textTransform: "none" }}
-            startIcon={<VideoCall />}
-          >
-            Create Meeting
-          </Button>
-          <TextField
-            variant="outlined"
-            placeholder="Meeting code"
-            InputProps={{
-              startAdornment: <Keyboard sx={{ marginRight: "5px" }} />,
-              endAdornment: <Button variant="text">Join</Button>,
+    <Container>
+      <Box>
+        <Typography variant="h4" p={2} m={0}>
+          Together
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          display: { sm: "block", md: "flex" },
+          paddingTop: { md: 10 },
+          flexDirecation: { sm: "column", md: "row" },
+        }}
+      >
+        <Box>
+          <Box component="h1" sx={{ fontSize: { md: 60 }, m: 0 }}>
+            Enjoy premium meeting experience for free{" "}
+          </Box>
+          <Box
+            sx={{
+              display: { sm: "block", md: "flex" },
+              alignItems: "stretch",
+              gap: "40px",
+              marginTop: 10,
+              textAlign: "center",
             }}
+          >
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ textTransform: "none" }}
+              startIcon={<VideoCall />}
+              onClick={create}
+            >
+              Create Meeting
+            </Button>
+            <TextField
+              variant="outlined"
+              placeholder="Meeting code"
+              InputProps={{
+                startAdornment: <Keyboard sx={{ marginRight: "5px" }} />,
+                endAdornment: <Button variant="text">Join</Button>,
+              }}
+              sx={{ marginTop: { sm: "10px 0", md: 0 } }}
+            />
+          </Box>
+        </Box>
+        <Box sx={{ padding: { md: 0, sm: 40 } }}>
+          <img
+            src={onlineMeetingImage}
+            width="100%"
+            alt="online-meeting"
+            height="auto"
           />
         </Box>
-      </Grid>
-      <Grid item xs={12} sm={12} md="6">
-        {" "}
-        Lorem ipsum, dolor sit amet consectetur adipisicing elit. Eius rerum
-        repudiandae ex harum deserunt debitis mollitia eligendi labore sed,
-        pariatur possimus sit quod porro exercitationem? Facere quisquam
-        accusantium eius voluptatum.
-      </Grid>
-    </Grid>
+      </Box>
+    </Container>
   );
 }
 

@@ -13,6 +13,7 @@ const grid = {
 };
 
 function VideoContainer({ videos }) {
+  console.log("videos>>", videos);
   const styles = {
     position: "relative",
     display: "flex",
@@ -21,10 +22,10 @@ function VideoContainer({ videos }) {
     justifyContent: "center",
     height: "100%",
     width: "100%",
-    gap: 1,
+    gap: 2,
     p: 2,
   };
-  const len = 8;
+  const len = videos.length;
   let size = 0;
   const width = [100, 50, 40, 30, 25, 20, 15];
   const breakpoint = [1, 2, 4, 6, 12, 20, 30];
@@ -39,9 +40,10 @@ function VideoContainer({ videos }) {
   return (
     <VideoFrameContext.Provider value={width[size]}>
       <Box sx={styles}>
-        {[...Array(len)].map((e, i) => (
-          <VideoFrame key={i} />
-        ))}
+        {videos.map((peer, i) => {
+          console.log(peer);
+          return <VideoFrame key={i} peer={peer} />;
+        })}
       </Box>
     </VideoFrameContext.Provider>
   );

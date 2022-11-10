@@ -4,6 +4,7 @@ import { Box } from "@mui/system";
 import MeetingRoom from "./layouts/MeetingRoom";
 import CssBaseline from "@mui/material/CssBaseline";
 import Homepage from "./layouts/Homepage";
+import Lobby from "./layouts/Lobby";
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -16,6 +17,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" exact element={<Homepage />} />
+          <Route path="/join" exact element={<Lobby />} />
           <Route path="/room/:roomID" element={<MeetingRoom />} />
         </Routes>
       </BrowserRouter>

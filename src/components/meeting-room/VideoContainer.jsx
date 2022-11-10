@@ -1,4 +1,4 @@
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, Container } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import VideoFrame from "./VideoFrame";
 import { VideoFrameContext } from "../../Context";
@@ -20,8 +20,6 @@ function VideoContainer({ videos }) {
     flex: "1 1 300px",
     flexFlow: "row wrap",
     justifyContent: "center",
-    height: "100%",
-    width: "100%",
     gap: 2,
     p: 2,
   };
@@ -39,12 +37,11 @@ function VideoContainer({ videos }) {
 
   return (
     <VideoFrameContext.Provider value={width[size]}>
-      <Box sx={styles}>
+      <Container id="video-container" sx={styles}>
         {videos.map((peer, i) => {
-          console.log(peer);
-          return <VideoFrame key={i} peer={peer} />;
+          return <VideoFrame key={i} peer={peer.peer} />;
         })}
-      </Box>
+      </Container>
     </VideoFrameContext.Provider>
   );
 }

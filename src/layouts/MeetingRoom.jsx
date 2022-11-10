@@ -25,13 +25,19 @@ const MeetingRoom = () => {
   const roomID = params.roomID;
 
   useEffect(() => {
-    socketRef.current = io.connect("https://together-server.onrender.com/");
+    const persistedID = localStorage.getItem("together-user-id");
+    const persistedMeetingID = localStorage.getItem("together-meeting-id");
+    socketRef.current = io.connect(import.meta.env.VITE_SOCKET_URL);
+    // console.log(import.meta.env.VITE_SOCKET_URL);
     navigator.mediaDevices
-      .getUserMedia({ video: videoConstraints, audio: true })
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         userVideo.current.srcObject = stream;
-        socketRef.current.emit("join room", roomID);
-        socketRef.current.on("all users", (users) => {
+        if (persistedID && persistedMeetingID) {
+        } else {
+          socketRef.current.emit("joinRoom", roomID);
+        }
+        socketRef.current.on("allUsers", (users) => {
           console.log(users);
           const peers = [];
           users.forEach((userID) => {
@@ -45,19 +51,29 @@ const MeetingRoom = () => {
           setPeers(peers);
         });
 
-        socketRef.current.on("user joined", (payload) => {
-          const peer = addPeer(payload.signal, payload.callerID, stream);
+        socketRef.current.on("participantJoined", (payload) => {
+          console.log("participantJoined", payload);
+          const peerObj = addPeer(payload.signal, payload.callerID, stream);
           peersRef.current.push({
             peerID: payload.callerID,
-            peer,
+            peerObj, //obj of {participantID, peer)
           });
-          console.log(peer);
-          setPeers((users) => [...users, peer]);
+          // console.log(peer);
+          console.log(peersRef.current);
+          setPeers((users) => [...users, { ...peerObj }]);
         });
 
-        socketRef.current.on("receiving returned signal", (payload) => {
+        socketRef.current.on("participantLeft", (userID) => {
+          console.log("participant left", userID);
+          let peers = peers.filter((id) => id !== userID);
+          let peerStreams = peersRef.current;
+        });
+
+        socketRef.current.on("stream", (payload) => {
+          console.log(peersRef.current);
+          console.log("stream", payload);
           const item = peersRef.current.find((p) => p.peerID === payload.id);
-          item.peer.signal(payload.signal);
+          item.peer.peer.signal(payload.signal);
         });
       });
   }, []);
@@ -66,59 +82,80 @@ const MeetingRoom = () => {
     const peer = new Peer({
       initiator: true,
       trickle: false,
+      config: {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
+        ],
+      },
       stream,
     });
 
     peer.on("signal", (signal) => {
-      socketRef.current.emit("sending signal", {
+      console.log("signal in create peer", signal);
+      socketRef.current.emit("requestToJoin", {
         userToSignal,
         callerID,
+        roomID,
         signal,
       });
     });
 
-    return peer;
+    return { participantId: callerID, peer };
   }
 
   function addPeer(incomingSignal, callerID, stream) {
     const peer = new Peer({
       initiator: false,
       trickle: false,
+      config: {
+        iceServers: [
+          { urls: "stun:stun.l.google.com:19302" },
+          { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
+        ],
+      },
       stream,
     });
 
     peer.on("signal", (signal) => {
-      socketRef.current.emit("returning signal", { signal, callerID });
+      console.log("signal in add peer", signal);
+      socketRef.current.emit("allowToJoin", { signal, callerID });
     });
 
     peer.signal(incomingSignal);
 
-    return peer;
+    return { participantId: callerID, peer };
   }
   return (
     <TabControlContext.Provider value={{ tab, handleChange }}>
-      <Box height="100vh" maxWidth="100vw" overflow="hidden">
-        <Stack direction="row" height="100vh" maxWidth="100vw">
+      <Box>
+        <Stack
+          flexGrow="100"
+          direction="row"
+          height="100vh"
+          maxWidth="100vw"
+          position="relative"
+        >
           <Box
-            flexGrow="100"
-            width="100%"
-            alignItems="center"
-            pb={1}
-            mb={6}
-            position="relative"
+            sx={{
+              // flexGrow: "100",
+              width: "100%",
+              alignItems: "center",
+              pb: 1,
+              mb: 6,
+              position: "relative",
+            }}
           >
             <Paper
               sx={{
+                width: { sm: 50, md: 200 },
                 zIndex: 1,
-                width: 300,
-                // flexShrink: 0,
-                // flexBasis: `calc(${size}% - 10px)`,
-                // objectFit: "cover",
                 borderRadius: 3,
                 overflow: "hidden",
                 position: "absolute",
                 right: 10,
-                bottom: 10,
+                bottom: 20,
+                lineHeight: 0,
               }}
             >
               <video
@@ -140,7 +177,7 @@ const MeetingRoom = () => {
             <RightContainer />
           </Slide>
         </Stack>
-        <Box position="sticky" bottom={0}>
+        <Box sx={{ position: "absolute", bottom: 0, width: "100%" }}>
           <MeetingActions />
         </Box>
       </Box>

@@ -28,7 +28,7 @@ const MeetingRoom = () => {
     const persistedID = localStorage.getItem("together-user-id");
     const persistedMeetingID = localStorage.getItem("together-meeting-id");
     socketRef.current = io.connect(import.meta.env.VITE_SOCKET_URL);
-    // console.log(import.meta.env.VITE_SOCKET_URL);
+    console.log(import.meta.env.VITE_SOCKET_URL);
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {

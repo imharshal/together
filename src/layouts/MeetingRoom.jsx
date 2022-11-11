@@ -38,6 +38,7 @@ const MeetingRoom = () => {
           console.log("joinRoom", socketRef.current);
           socketRef.current.emit("joinRoom", roomID);
         }
+
         socketRef.current.on("allUsers", (users) => {
           console.log(users);
           const peers = [];
@@ -101,6 +102,7 @@ const MeetingRoom = () => {
       },
       stream,
     });
+    peer.on("error", (err) => console.log("error", err));
 
     peer.on("signal", (signal) => {
       console.log("signal in create peer", signal);
@@ -142,6 +144,7 @@ const MeetingRoom = () => {
       console.log("signal in add peer", signal);
       socketRef.current.emit("allowToJoin", { signal, callerID });
     });
+    peer.on("error", (err) => console.log("error", err));
 
     peer.signal(incomingSignal);
 

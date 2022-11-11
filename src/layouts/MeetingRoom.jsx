@@ -81,12 +81,12 @@ const MeetingRoom = () => {
   }, []);
 
   function createPeer(userToSignal, callerID, stream) {
-    console.log("inside create peer");
     const peer = new Peer({
       initiator: true,
       trickle: false,
       reconnectTimer: 100,
       iceTransportPolicy: "relay",
+      sdpSemantics: "unified-plan",
       config: {
         iceServers: [
           {
@@ -103,6 +103,7 @@ const MeetingRoom = () => {
       },
       stream,
     });
+    console.log("inside create peer", peer);
     peer.on("error", (err) => console.log("error", err));
 
     peer.on("signal", (signal) => {

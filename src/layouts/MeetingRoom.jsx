@@ -132,7 +132,6 @@ const MeetingRoom = () => {
             username: "openrelayproject",
             credential: "openrelayproject",
           },
-          { urls: "stun:global.stun.twilio.com:3478?transport=udp" },
         ],
       },
       stream,

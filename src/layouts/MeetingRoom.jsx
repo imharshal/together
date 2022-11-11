@@ -35,6 +35,7 @@ const MeetingRoom = () => {
         userVideo.current.srcObject = stream;
         if (persistedID && persistedMeetingID) {
         } else {
+          console.log("joinRoom", socketRef.current);
           socketRef.current.emit("joinRoom", roomID);
         }
         socketRef.current.on("allUsers", (users) => {

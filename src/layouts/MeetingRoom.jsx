@@ -81,6 +81,7 @@ const MeetingRoom = () => {
   }, []);
 
   function createPeer(userToSignal, callerID, stream) {
+    console.log("inside create peer");
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -118,6 +119,8 @@ const MeetingRoom = () => {
   }
 
   function addPeer(incomingSignal, callerID, stream) {
+    console.log("inside add peer");
+
     const peer = new Peer({
       initiator: false,
       trickle: false,

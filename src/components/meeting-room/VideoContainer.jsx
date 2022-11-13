@@ -13,7 +13,10 @@ const grid = {
 };
 
 function VideoContainer({ videos }) {
-  console.log("videos>>", videos);
+  let peerVideos = Array.from(videos.values());
+  // let peerVideos = Videos.filter((peer) => peer.connected == true);
+
+  console.log("videos>>", peerVideos);
   const styles = {
     position: "relative",
     display: "flex",
@@ -23,7 +26,7 @@ function VideoContainer({ videos }) {
     gap: 2,
     p: 2,
   };
-  const len = videos.length;
+  const len = peerVideos.length;
   let size = 0;
   const width = [100, 50, 40, 30, 25, 20, 15];
   const breakpoint = [1, 2, 4, 6, 12, 20, 30];
@@ -38,9 +41,9 @@ function VideoContainer({ videos }) {
   return (
     <VideoFrameContext.Provider value={width[size]}>
       <Container id="video-container" sx={styles}>
-        {videos.map((peer, i) => {
-          return <VideoFrame key={i} peer={peer.peer} />;
-        })}
+        {peerVideos.map((peer, i) => (
+          <VideoFrame key={i} peer={peer.peer} socketID={peer.socketID} />
+        ))}
       </Container>
     </VideoFrameContext.Provider>
   );

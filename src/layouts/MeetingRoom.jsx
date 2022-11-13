@@ -1,13 +1,13 @@
+import React, { useContext, useRef, useState, useEffect } from "react";
 import io from "socket.io-client";
 import Peer from "simple-peer";
 import { useParams } from "react-router-dom";
 import { Box, Slide, Stack, Paper } from "@mui/material";
-import { useContext, useRef, useState, useEffect } from "react";
 import MeetingActions from "../components/meeting-room/MeetingActions";
 import VideoContainer from "../components/meeting-room/VideoContainer";
 import Controls from "../components/right-panel/Controls";
 import RightContainer from "../components/right-panel/RightContainer";
-import { TabControlContext } from "../Context";
+import { PeersContext, TabControlContext } from "../Context";
 const videoConstraints = {
   height: window.innerHeight / 2,
   width: window.innerWidth / 2,
@@ -18,16 +18,19 @@ const MeetingRoom = () => {
   const handleChange = (event, tab) => {
     setTab(tab);
   };
-  const [peers, setPeers] = useState([]);
+  const [peers, setPeers] = useState(new Map());
   const socketRef = useRef();
   const userVideo = useRef();
   const peersRef = useRef([]);
   const roomID = params.roomID;
+  const socket = io(import.meta.env.VITE_SOCKET_URL);
+  const [, updateState] = React.useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
 
   useEffect(() => {
     const persistedID = localStorage.getItem("together-user-id");
     const persistedMeetingID = localStorage.getItem("together-meeting-id");
-    socketRef.current = io.connect(import.meta.env.VITE_SOCKET_URL);
+    // socketRef.current = io.connect(import.meta.env.VITE_SOCKET_URL);
     console.log(import.meta.env.VITE_SOCKET_URL);
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
@@ -35,52 +38,71 @@ const MeetingRoom = () => {
         userVideo.current.srcObject = stream;
         if (persistedID && persistedMeetingID) {
         } else {
-          console.log("joinRoom", socketRef.current);
-          socketRef.current.emit("joinRoom", roomID);
+          const userDetails = {
+            username: "harshal",
+            roomID,
+            audio: true,
+            video: true,
+          };
+          console.log(socket.id);
+          socket.emit("joinRoom", userDetails);
         }
 
-        socketRef.current.on("allUsers", (users) => {
-          console.log(users);
-          const peers = [];
+        socket.on("allUsers", (users) => {
+          const peersMap = peers; // copying state peers
+          users = users.filter((id) => id !== socket.id);
+          console.log("allUsers>>>", users);
           users.forEach((userID) => {
-            const peer = createPeer(userID, socketRef.current.id, stream);
-            peersRef.current.push({
-              peerID: userID,
+            const peer = createPeer(userID, socket.id, stream);
+            let peerObj = {
+              socketID: userID,
               peer,
-            });
-            peers.push(peer);
+            };
+            if (!peersMap.has(peerObj.socketID))
+              peersMap.set(peerObj.socketID, peerObj); //creating new state for peers
           });
-          setPeers(peers);
+          setPeers(peersMap); // setting peers with all users
+          forceUpdate();
         });
 
-        socketRef.current.on("participantJoined", (payload) => {
-          console.log("participantJoined", payload);
-          const peerObj = addPeer(payload.signal, payload.callerID, stream);
-          peersRef.current.push({
-            peerID: payload.callerID,
-            peerObj, //obj of {participantID, peer)
-          });
-          // console.log(peer);
-          console.log(peersRef.current);
-          setPeers((users) => [...users, { ...peerObj }]);
+        //this event triggers when any participant left the room
+        socket.on("participantLeft", (userID) => {
+          let peer = peers.get(userID);
+          peer = peer.peer;
+          peer.destroy();
+          console.log("lefted peer", peer);
+
+          // setPeers((prevPeers) => {
+          //   let peers = prevPeers;
+          //   peers.delete(userID);
+          //   return peers;
+          // });
+          console.log("participant left", userID, "remaining", peers);
+          forceUpdate();
         });
 
-        socketRef.current.on("participantLeft", (userID) => {
-          console.log("participant left", userID);
-          let peers = peers.filter((id) => id !== userID);
-          let peerStreams = peersRef.current;
+        //this event triggers when new participant join the room
+        socket.on("participantJoined", (payload) => {
+          const peer = addPeer(payload.signal, payload.callerID, stream);
+          let peerObj = {
+            socketID: payload.callerID,
+            peer,
+          };
+          setPeers((prevPeers) => prevPeers.set(peerObj.socketID, peerObj));
+          console.log("participantJoined", payload, "participants", peers);
+          forceUpdate();
         });
 
-        socketRef.current.on("stream", (payload) => {
-          console.log(peersRef.current);
-          console.log("stream", payload);
-          const item = peersRef.current.find((p) => p.peerID === payload.id);
-          item.peer.peer.signal(payload.signal);
+        socket.on("stream", (payload) => {
+          const item = peers.get(payload.id);
+          item.peer.signal(payload.signal);
+          forceUpdate();
         });
       });
   }, []);
 
   function createPeer(userToSignal, callerID, stream) {
+    console.log("inside create peer");
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -103,20 +125,17 @@ const MeetingRoom = () => {
       },
       stream,
     });
-    console.log("inside create peer", peer);
-    peer.on("error", (err) => console.log("error", err));
 
     peer.on("signal", (signal) => {
-      console.log("signal in create peer", signal);
-      socketRef.current.emit("requestToJoin", {
+      console.log("signal in create peer");
+      socket.emit("requestToJoin", {
         userToSignal,
         callerID,
         roomID,
         signal,
       });
     });
-
-    return { participantId: callerID, peer };
+    return { ...peer, socketID: callerID };
   }
 
   function addPeer(incomingSignal, callerID, stream) {
@@ -145,71 +164,76 @@ const MeetingRoom = () => {
     });
 
     peer.on("signal", (signal) => {
-      console.log("signal in add peer", signal);
-      socketRef.current.emit("allowToJoin", { signal, callerID });
+      socket.emit("allowToJoin", { signal, callerID });
     });
-    peer.on("error", (err) => console.log("error", err));
+    peer.on("disconnect", (err) => console.log("disconnect", err));
 
     peer.signal(incomingSignal);
 
-    return { participantId: callerID, peer };
+    return { ...peer, socketID: callerID };
   }
+
+  useEffect(() => {
+    console.log("useEffect peers changed", peers);
+  });
   return (
-    <TabControlContext.Provider value={{ tab, handleChange }}>
-      <Box>
-        <Stack
-          flexGrow="100"
-          direction="row"
-          height="100vh"
-          maxWidth="100vw"
-          position="relative"
-        >
-          <Box
-            sx={{
-              // flexGrow: "100",
-              width: "100%",
-              alignItems: "center",
-              pb: 1,
-              mb: 6,
-              position: "relative",
-            }}
+    <PeersContext.Provider value={{ peers, setPeers }}>
+      <TabControlContext.Provider value={{ tab, handleChange }}>
+        <Box>
+          <Stack
+            flexGrow="100"
+            direction="row"
+            height="100vh"
+            maxWidth="100vw"
+            position="relative"
           >
-            <Paper
+            <Box
               sx={{
-                width: { sm: 50, md: 200 },
-                zIndex: 1,
-                borderRadius: 3,
-                overflow: "hidden",
-                position: "absolute",
-                right: 10,
-                bottom: 20,
-                lineHeight: 0,
+                // flexGrow: "100",
+                width: "100%",
+                alignItems: "center",
+                pb: 1,
+                mb: 6,
+                position: "relative",
               }}
             >
-              <video
-                muted
-                ref={userVideo}
-                playsInline
-                autoPlay
-                style={{
-                  objectFit: "cover",
-                  width: "100%",
-                  height: "100%",
+              <Paper
+                sx={{
+                  width: { sm: 3, md: 180 },
+                  height: { sm: 2, md: 120 },
+                  zIndex: 1,
+                  borderRadius: 3,
+                  overflow: "hidden",
+                  position: "absolute",
+                  right: 10,
+                  bottom: 20,
+                  lineHeight: 0,
                 }}
-              />
-            </Paper>
+              >
+                <video
+                  muted
+                  ref={userVideo}
+                  playsInline
+                  autoPlay
+                  style={{
+                    width: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </Paper>
 
-            <VideoContainer videos={peers} />
+              <VideoContainer videos={peers} />
+            </Box>
+            <Slide direction="left" in={tab ? true : false}>
+              <RightContainer />
+            </Slide>
+          </Stack>
+          <Box sx={{ position: "absolute", bottom: 0, width: "100%" }}>
+            <MeetingActions />
           </Box>
-          <Slide direction="left" in={tab ? true : false}>
-            <RightContainer />
-          </Slide>
-        </Stack>
-        <Box sx={{ position: "absolute", bottom: 0, width: "100%" }}>
-          <MeetingActions />
         </Box>
-      </Box>
-    </TabControlContext.Provider>
+      </TabControlContext.Provider>
+    </PeersContext.Provider>
   );
 };
 

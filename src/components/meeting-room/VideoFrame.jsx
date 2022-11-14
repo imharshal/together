@@ -1,17 +1,19 @@
 import { Paper } from "@mui/material";
 import React, { useContext, useRef, useEffect, useState } from "react";
 import { PeersContext, VideoFrameContext } from "../../Context";
-function VideoFrame({ peer, socketID }) {
+function VideoFrame({ peer }) {
   const size = useContext(VideoFrameContext);
-  const { peers, setPeers } = useContext(PeersContext);
+  console.log("from video frame", peer);
+  // const { peers, setPeers } = useContext(PeersContext);
   const [destroyed, setDestroyed] = useState();
   const ref = useRef();
-  let videoFrame;
   useEffect(() => {
     peer.on("stream", (stream) => {
+      // console.log("got stream for ", peer.socketID);
       ref.current.srcObject = stream;
     });
     peer.on("close", () => {
+      // console.log("loose stream for ", peer.socketID);
       setDestroyed(true);
       // setPeers((prevPeers) => {
       //   let peers = prevPeers;
@@ -40,6 +42,7 @@ function VideoFrame({ peer, socketID }) {
         }}
       >
         <video
+          id={peer.socketID}
           playsInline
           autoPlay
           ref={ref}

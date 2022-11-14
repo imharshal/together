@@ -1,5 +1,4 @@
 import React, { useContext, useRef, useState, useEffect } from "react";
-import io from "socket.io-client";
 import Peer from "simple-peer";
 import { useParams } from "react-router-dom";
 import { Box, Slide, Stack, Paper } from "@mui/material";
@@ -12,54 +11,42 @@ const videoConstraints = {
   height: window.innerHeight / 2,
   width: window.innerWidth / 2,
 };
-const MeetingRoom = () => {
+const MeetingRoom = React.memo(({ socket }) => {
   let params = useParams();
   const [tab, setTab] = useState("chat");
   const handleChange = (event, tab) => {
     setTab(tab);
   };
   const [peers, setPeers] = useState(new Map());
-  const socketRef = useRef();
   const userVideo = useRef();
-  const peersRef = useRef([]);
   const roomID = params.roomID;
-  const socket = io(import.meta.env.VITE_SOCKET_URL);
   const [, updateState] = React.useState();
   const forceUpdate = React.useCallback(() => updateState({}), []);
 
   useEffect(() => {
-    const persistedID = localStorage.getItem("together-user-id");
-    const persistedMeetingID = localStorage.getItem("together-meeting-id");
-    // socketRef.current = io.connect(import.meta.env.VITE_SOCKET_URL);
     console.log(import.meta.env.VITE_SOCKET_URL);
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         userVideo.current.srcObject = stream;
-        if (persistedID && persistedMeetingID) {
-        } else {
-          const userDetails = {
-            username: "harshal",
-            roomID,
-            audio: true,
-            video: true,
-          };
-          console.log(socket.id);
-          socket.emit("joinRoom", userDetails);
-        }
+
+        const userDetails = {
+          username: "harshal",
+          roomID,
+          audio: true,
+          video: true,
+        };
+        console.log(socket.id);
+        socket.emit("joinRoom", userDetails);
 
         socket.on("allUsers", (users) => {
           const peersMap = peers; // copying state peers
           users = users.filter((id) => id !== socket.id);
-          console.log("allUsers>>>", users);
+          // console.log("allUsers>>>", users);
           users.forEach((userID) => {
             const peer = createPeer(userID, socket.id, stream);
-            let peerObj = {
-              socketID: userID,
-              peer,
-            };
-            if (!peersMap.has(peerObj.socketID))
-              peersMap.set(peerObj.socketID, peerObj); //creating new state for peers
+
+            if (!peersMap.has(userID)) peersMap.set(userID, peer); //creating new state for peers
           });
           setPeers(peersMap); // setting peers with all users
           forceUpdate();
@@ -68,7 +55,6 @@ const MeetingRoom = () => {
         //this event triggers when any participant left the room
         socket.on("participantLeft", (userID) => {
           let peer = peers.get(userID);
-          peer = peer.peer;
           peer.destroy();
           console.log("lefted peer", peer);
 
@@ -84,25 +70,20 @@ const MeetingRoom = () => {
         //this event triggers when new participant join the room
         socket.on("participantJoined", (payload) => {
           const peer = addPeer(payload.signal, payload.callerID, stream);
-          let peerObj = {
-            socketID: payload.callerID,
-            peer,
-          };
-          setPeers((prevPeers) => prevPeers.set(peerObj.socketID, peerObj));
+          setPeers((prevPeers) => prevPeers.set(peer.socketID, peer));
           console.log("participantJoined", payload, "participants", peers);
           forceUpdate();
         });
 
         socket.on("stream", (payload) => {
           const item = peers.get(payload.id);
-          item.peer.signal(payload.signal);
+          item.signal(payload.signal);
           forceUpdate();
         });
       });
   }, []);
 
   function createPeer(userToSignal, callerID, stream) {
-    console.log("inside create peer");
     const peer = new Peer({
       initiator: true,
       trickle: false,
@@ -135,12 +116,13 @@ const MeetingRoom = () => {
         signal,
       });
     });
-    return { ...peer, socketID: callerID };
+    // console.log("inside create peer", peer);
+    peer.socketID = callerID;
+
+    return peer;
   }
 
   function addPeer(incomingSignal, callerID, stream) {
-    console.log("inside add peer");
-
     const peer = new Peer({
       initiator: false,
       trickle: false,
@@ -162,6 +144,7 @@ const MeetingRoom = () => {
       },
       stream,
     });
+    // console.log("inside add peer", peer);
 
     peer.on("signal", (signal) => {
       socket.emit("allowToJoin", { signal, callerID });
@@ -169,8 +152,8 @@ const MeetingRoom = () => {
     peer.on("disconnect", (err) => console.log("disconnect", err));
 
     peer.signal(incomingSignal);
-
-    return { ...peer, socketID: callerID };
+    peer.socketID = callerID;
+    return peer;
   }
 
   useEffect(() => {
@@ -199,8 +182,8 @@ const MeetingRoom = () => {
             >
               <Paper
                 sx={{
-                  width: { sm: 3, md: 180 },
-                  height: { sm: 2, md: 120 },
+                  width: { xs: 120, sm: 120, md: 180 },
+                  height: { xs: 90, sm: 90, md: 120 },
                   zIndex: 1,
                   borderRadius: 3,
                   overflow: "hidden",
@@ -235,6 +218,6 @@ const MeetingRoom = () => {
       </TabControlContext.Provider>
     </PeersContext.Provider>
   );
-};
+}, []);
 
 export default MeetingRoom;

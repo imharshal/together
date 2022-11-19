@@ -14,10 +14,10 @@ function MeetingActions() {
         exclusive
         // onChange={handleChange}
       >
-        <ToggleButton value="people" aria-label="people">
+        <ToggleButton value="mic" aria-label="people">
           <Mic />
         </ToggleButton>
-        <ToggleButton value="people" aria-label="people">
+        <ToggleButton value="mic" aria-label="video">
           <Videocam />
         </ToggleButton>
       </ControlButtonGroup>

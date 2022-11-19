@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 
 import { Container, Stack, Box } from "@mui/material";
-function Lobby({ setJoin }) {
+import ActionButtons from "../components/lobby/ActionButtons";
+function Lobby({ setJoin, roomID, setUserDetails }) {
   //   const [audioInputs, setAudioInputs] = useState();
   //   const [audioOutputs, setAudioOutputs] = useState();
   //   const [videoInputs, setVideoInputs] = useState();
+
   const [devices, setDevices] = useState();
+  const [username, setUsername] = useState("");
   const videoRef = useRef();
+  const [audio, setAudio] = useState();
+  const [video, setVideo] = useState();
+
   const updateDeviceList = () => {
     navigator.mediaDevices.enumerateDevices().then((mediaDevices) => {
       let audioIn = [],
@@ -29,26 +35,42 @@ function Lobby({ setJoin }) {
       console.log(event);
       updateDeviceList();
     };
-    // if (!audioInputs || !videoInputs || !audioOutputs) {
-    //   console.log("udpated");
-    //   updateDeviceList();
-    // }
+
     if (!devices) updateDeviceList();
+
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      });
   }, []);
-  //   useEffect(() => {
-  //     console.log("udpated directly", devices);
-  //   }, [devices]);
 
   const handleJoinMeeting = () => {
+    const userDetails = {
+      username,
+      roomID,
+      audio: !audio,
+      video: !video,
+    };
+    setUserDetails(userDetails);
     setJoin(true);
   };
+
   return (
     <Container>
-      <Stack direction="row" spacing="3">
-        <Box>
-          <video ref={videoRef} width="50%" />
+      <Stack direction={{ sm: "column", md: "row" }} spacing={3}>
+        <Box sx={{ m: 3, position: "relative" }}>
+          <video width="100%" muted autoPlay ref={videoRef} />
+          <ActionButtons
+            audio={audio}
+            video={video}
+            setAudio={setAudio}
+            setVideo={setVideo}
+          />
         </Box>
         <Box>
+          <input type="text" onBlur={(e) => setUsername(e.target.value)} />
           <button onClick={handleJoinMeeting}> Join Meeting</button>
         </Box>
       </Stack>

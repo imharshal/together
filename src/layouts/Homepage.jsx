@@ -1,3 +1,4 @@
+import {useEffect} from 'react'
 import Button from "@mui/material/Button";
 import { Container, Grid, TextField, Box, Typography } from "@mui/material";
 
@@ -7,11 +8,12 @@ import { useNavigate } from "react-router-dom";
 import onlineMeetingImage from "../assets/online-meeting.png";
 function Homepage() {
   let navigate = useNavigate();
-
+  
   function create() {
     const id = uuid();
     navigate(`/room/${id}`);
   }
+  useEffect(() => { fetch('https://together-server.onrender.com') }, [])
   return (
     <Container>
       <Box>

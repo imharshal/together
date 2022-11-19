@@ -15,15 +15,7 @@ const grid = {
 function VideoContainer({ videos }) {
   let peerVideos = Array.from(videos.values());
   // let peerVideos = Videos.filter((peer) => peer.connected == true);
-  const styles = {
-    position: "relative",
-    display: "flex",
-    flex: "1 1 300px",
-    flexFlow: "row wrap",
-    justifyContent: "center",
-    gap: 2,
-    p: 2,
-  };
+
   const len = peerVideos.length;
   let size = 0;
   const width = [100, 50, 40, 30, 25, 20, 15];
@@ -36,6 +28,17 @@ function VideoContainer({ videos }) {
   else if (len <= breakpoint[5]) size = 5;
   else if (len >= breakpoint[6]) size = 6;
 
+  const flexflowForMobile = size < 2 ? "column wrap" : "row wrap";
+  const styles = {
+    position: "relative",
+    display: "flex",
+    flex: "1 1 300px",
+    height: "95vh",
+    flexFlow: { xs: flexflowForMobile, sm: "row wrap", md: "row wrap" },
+    justifyContent: "center",
+    gap: 2,
+    p: 2,
+  };
   return (
     <VideoFrameContext.Provider value={width[size]}>
       <Container id="video-container" sx={styles}>

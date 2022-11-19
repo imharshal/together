@@ -12,15 +12,22 @@ function Meeting() {
   const roomID = params.roomID;
   const [join, setJoin] = useState(false);
   const [socket, setSocket] = useState(null);
+  const [userDetails, setUserDetails] = useState();
+
   useEffect(() => {
     const newSocket = io(import.meta.env.VITE_SOCKET_URL);
     setSocket(newSocket);
 
     if (socket) return socket.disconnect();
   }, []);
+ 
   return (
     <MeetingContext.Provider value={socket}>
-      {join ? <MeetingRoom socket={socket} /> : <Lobby setJoin={setJoin} />}
+      {join ? (
+        <MeetingRoom socket={socket} userDetails={userDetails} />
+      ) : (
+        <Lobby setJoin={setJoin} roomID={roomID} setUserDetails={setUserDetails} />
+      )}
     </MeetingContext.Provider>
   );
 }
